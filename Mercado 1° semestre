@@ -1,0 +1,349 @@
+#include <stdlib.h>
+#include <stdio.h>
+
+typedef struct Estoque {	//struct principal, onde armazena os cadastros dos produtos do mercado
+    int codigo;
+    char nome[50];
+    float preco;
+    int quantidade;
+} Estoque;
+
+typedef struct Venda {		//struct para venda, será utilizado para armazenar as vendas feitas no programa
+    int cod, qtd;
+    char nome[50];
+    float valor;
+} Venda;
+
+typedef struct Node {		//INICIO LISTA
+    Estoque produto;
+    struct Node* Prox;
+} Node;
+
+Node* createNode(Estoque produto) {
+    Node* newNode = (Node*)malloc(sizeof(Node));
+    newNode->produto = produto;
+    newNode->Prox = NULL;
+    return newNode;
+}
+
+void insertAtEnd(Node** head, Estoque produto) {	//FIM LISTA
+    Node* newNode = createNode(produto);
+    if (*head == NULL) {
+        *head = newNode;
+        return;
+    }
+
+    Node* current = *head;
+    while (current->Prox != NULL) {
+        current = current->Prox;
+    }
+    current->Prox = newNode;
+}
+
+void cadastrarProduto(Node** head) {	//funcao para cadastrar os produtos do sistema e armazenando na Struct Estoque (utiliza ponteiro)
+    Estoque produto;
+    int exit;
+
+    do {
+        printf("Informe o codigo do produto: ");
+        scanf("%d", &produto.codigo);
+        printf("Informe o nome do produto: ");
+        scanf("%s", produto.nome);
+        printf("Informe o preco do produto: ");
+        scanf("%f", &produto.preco);
+        printf("Informe a quantidade do produto: ");
+        scanf("%d", &produto.quantidade);
+
+        insertAtEnd(head, produto);
+
+        printf("Digite 1 para continuar ou 2 para sair: ");
+        scanf("%d", &exit);
+    } while (exit == 1);
+}
+
+void ListarProduto(Node* head) {		//funcao para listar todos os produtos cadastrados e armazenados na Struct Estoque (utiliza ponteiro)
+    Node* current = head;
+
+    if (current == NULL) {
+        printf("A lista esta vazia.\n");
+    }
+    printf("Elementos da lista:\n");
+    while (current != NULL) {
+        printf("\nCodigo: %d\n", current->produto.codigo);
+        printf("Nome: %s\n", current->produto.nome);
+        printf("Preco: %.2f\n", current->produto.preco);
+        printf("Quantidade: %d\n\n", current->produto.quantidade);
+        current = current->Prox;
+    }
+}
+
+void RemoverProduto(Node** head) {		//funcao para remover um produto cadastrado da lista Struct Estoque (utiliza ponteiro)
+
+    if (*head == NULL) {
+        printf("A lista está vazia");
+        return;
+    }
+    int remover;
+    printf("Informe o codigo do produto que sera removido: ");
+    scanf("%d", &remover);
+
+    Node* current = *head;
+    Node* prevNode = NULL;
+
+    while (current != NULL) {
+        if (current->produto.codigo == remover) {
+            if (prevNode == NULL) {
+                *head = current->Prox;
+            } else {
+                prevNode->Prox = current->Prox;
+            }
+            free(current);
+            printf("Produto removido\n");
+            return;
+        }
+
+        prevNode = current;
+        current = current->Prox;
+    }
+}
+
+void ProcurarProduto(Node* head) {		//funcao para localizar um produto atraves do codigo na lista Struct Estoque (utiliza ponteiro)
+    Node* current = head;
+    Estoque produto;
+    int procurar;
+
+    printf("Informe o codigo do produto: ");
+    scanf("%d", &procurar);
+    while (current != NULL) {
+        if (current->produto.codigo == procurar) {
+            printf("\nCodigo: %d\n", current->produto.codigo);
+            printf("Nome: %s\n", current->produto.nome);
+            printf("Preco: %.2f\n", current->produto.preco);
+            printf("Quantidade: %d\n\n", current->produto.quantidade);
+            break;
+        }
+        current = current->Prox;
+    }
+}
+
+typedef struct NodePilha {		//INICIO PILHA
+    Venda data;
+    struct NodePilha* next;
+} NodePilha;
+
+typedef struct Stack {
+    NodePilha* top;
+} Stack;
+
+Stack* createStack() {
+    Stack* stack = (Stack*)malloc(sizeof(Stack));
+    stack->top = NULL;
+    return stack;
+}
+
+int isEmpty(Stack* stack) {
+    return (stack->top == NULL);
+}
+
+void push(Stack* stack, Venda* data) {	
+    NodePilha* newNode = (NodePilha*)malloc(sizeof(NodePilha));
+    newNode->data = *data;
+    newNode->next = stack->top;
+    stack->top = newNode;
+}
+
+Venda pop(Stack* stack) {	
+
+    if (isEmpty(stack)) {
+        printf("A pilha esta vazia.\n");
+        Venda venda_vazia = { 0, 0, 0.0 };
+        return venda_vazia;
+    }
+
+    NodePilha* temp = stack->top;
+    Venda data = temp->data;
+    stack->top = temp->next;
+    free(temp);
+    return data;
+}
+
+void MostrarVendas(Stack* stack) {		//FIM PILHA	
+    if (isEmpty(stack)) {
+        printf("Nenhuma venda foi realizada.\n");
+        return;
+    }
+
+    printf("Vendas realizadas:\n");
+    NodePilha* current = stack->top;
+
+    while (current != NULL) {
+        printf("Código do produto: %d\n", current->data.cod);
+        printf("Quantidade vendida: %d\n", current->data.qtd);
+        printf("Valor da venda: R$%.2f\n\n", current->data.valor);
+        current = current->next;
+    }
+}
+
+void VenderProduto(Node** head, Stack* stack) {		//funcao para vender os itens cadastrados na Struct Estoque e empilhando na Struct Venda (utiliza ponteiro e pilha)
+    Venda venda;
+
+    if (*head == NULL) {
+        printf("Nenhum produto cadastrado.\n");
+        return;
+    }
+
+    int cod, qtd;
+    float valor = 0.0;
+
+    printf("Informe o codigo do produto que sera vendido: ");
+    scanf("%d", &cod);
+    printf("Informe a quantidade desejada: ");
+    scanf("%d", &qtd);
+
+    Node* current = *head;
+
+    while (current != NULL) {
+        if (current->produto.codigo == cod) {
+            if (current->produto.quantidade >= qtd) {
+                valor = current->produto.preco * qtd;
+                current->produto.quantidade -= qtd;
+                printf("\nTotal da venda: R$%.2f\n", valor);
+                printf("Sobraram %d no estoque.\n", current->produto.quantidade);
+
+                venda.cod = cod;
+                venda.qtd = qtd;
+                venda.valor = valor;
+                push(stack, &venda);
+            } else {
+                printf("Quantidade insuficiente no estoque.\n");
+            }
+            break;
+        }
+        current = current->Prox;
+    }
+
+    if (current == NULL) {
+        printf("Produto nao encontrado.\n");
+        return;
+    }
+}
+
+int cancelarVenda(Stack* stack, Node* head, Estoque* produto) {		//funcao para cancelar a ULTIMA venda feita (utilzia ponteiro e pilha)
+    if (isEmpty(stack)) {
+        printf("Nenhuma venda realizada.\n");
+        return 0;
+    }
+
+    Venda venda = pop(stack);
+
+    Node* current = head;
+    while (current != NULL) {
+        if (current->produto.codigo == venda.cod) {
+            current->produto.quantidade = current->produto.quantidade + venda.qtd;
+            produto->quantidade = current->produto.quantidade;
+            printf("Venda cancelada.\n");
+            return venda.qtd;
+        }
+        current = current->Prox;
+    }
+
+    printf("Produto da venda nao encontrado no estoque.\n");
+    return 0;
+}
+
+void Assinatura(){		//funcao assinatura
+
+	
+	printf("*****     *****    *****\n");
+    printf("*         *        *     \n");
+    printf("*         *        *    \n");
+    printf("*****     *        ***** \n");
+    printf("*         *            * \n");
+    printf("*         *            * \n");
+    printf("*         *****    *****\n");
+    printf("\nPrograma desenvolvido por\n Filipe Cerqueira\naluno Senai-Turma 85635\n\n");
+}
+
+int main() {		//funcao principal onde possui o menu, e com base na escolha, chama a função equivalente
+
+	Assinatura();	//chamando funcao assinatura antes do programa rodar
+	system("pause");
+    Node* head = NULL;		//cria uma variavel chamada head, que e um ponteiro para a Struct Node (lista)
+    Node* current = NULL;	//cria uma variavel chamada current, que e ponteiro para a Struct Node	(Pilha)
+
+    Venda venda;		// criando uma variavel do tipo Venda (Struct)
+    Estoque produto;	// criando uma variavel do tipo Estoque (Struct)
+    Stack* stack = createStack();	//serve para utilizar a pilha no case 7
+    
+    int menu, exitmenu, cancelar;
+
+    do {
+    	system("cls");
+        printf("==================\tMENU\t==================\n");
+		printf("DIGITE [1] PARA CADASTRAR PRODUTO\n");
+		printf("DIGITE [2] PARA REMOVER PRODUTO\n");
+		printf("DIGITE [3] PARA	LISTAR PRODUTOS \n");
+		printf("DIGITE [4] PARA	PROCURAR PRODUTO \n");
+		printf("DIGITE [5] PARA VENDER PRODUTOS\n");
+		printf("DIGITE [6] PARA LISTAR VENDAS\n");
+		printf("DIGITE [7] PARA CANCELAR A ULTIMA VENDA\n");
+		printf("DIGITE [8] PARA ENCERRAR O PROGRAMA\n");
+		printf("==================================================\n");
+		scanf("%d",&menu);
+
+        switch (menu) {
+            case 1:
+            	system("cls");
+                cadastrarProduto(&head);
+                break;
+                system("cls");
+            case 2:
+            	system("cls");
+                RemoverProduto(&head);
+                break;
+            case 3:
+            	system("cls");
+                ListarProduto(head);
+                break;
+            case 4:
+            	system("cls");
+                ProcurarProduto(head);
+                break;
+            case 5:
+            	system("cls");
+            	VenderProduto(&head, stack);
+                break;         
+            case 6:
+            	system("cls");
+                MostrarVendas(stack);
+                break;
+            case 7:
+            	system("cls");
+                cancelar = cancelarVenda(stack, head, &produto);
+                if (cancelar > 0) {
+                    printf("Quantidade devolvida ao estoque: %d\n", cancelar);
+                }
+                break;
+            case 8:	
+                exitmenu = 1;
+                break;
+            default:
+                printf("Opcao invalida.\n");
+                break;
+        }
+    } while (exitmenu != 1);
+
+    current = head;		
+    while (current != NULL) {	//while para liberar a memoria armazenada pelo programa (lista)
+        Node* temp = current;
+        current = current->Prox;
+        free(temp);
+    }
+    free(head);
+
+    while (!isEmpty(stack)) {	//while para liberar a memoria armazenada pelo programa (Pilha)
+        pop(stack);
+    }
+    free(stack);
+
+}
